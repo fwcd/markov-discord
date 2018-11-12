@@ -16,6 +16,8 @@ dependencies:
 - base
 - discord-haskell
 - pipes
+- containers
+- random
 - text
 
 library:
