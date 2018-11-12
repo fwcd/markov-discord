@@ -6,6 +6,8 @@ import Control.Exception (finally)
 import Control.Monad (when)
 import Data.Char (toLower)
 import Data.Monoid ((<>))
+import Data.List (isInfixOf)
+import Data.Maybe
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 
@@ -16,14 +18,18 @@ main :: IO ()
 main = do
     tok <- T.strip <$> TIO.readFile "./authtoken.secret"
     dis <- loginRestGateway (Auth tok)
+    userResponse <- restCall dis GetCurrentUser
+    user <- case userResponse of
+        Left err -> putStrLn("Could not fetch bot user information: " <> show err) >> return Nothing
+        Right usr -> return $ Just usr
     finally (let loop = do
                     e <- nextEvent dis
                     case e of
                         Left err -> putStrLn ("Event error: " <> show err)
                         Right (MessageCreate m) -> do
-                            when (hasValidPrefix (messageText m)) $ do
+                            when (isMentioned m user) $ do
                                 inputMsgs <- restCall dis (GetChannelMessages (messageChannel m) (100, AroundMessage (messageId m)))
-                                let chainLength = 20 in case inputMsgs of
+                                let chainLength = 40 in case inputMsgs of
                                     Left err -> putStrLn ("Error while querying messages from channel: " <> show err)
                                     Right msgs -> do
                                         respMsg <- markovGenerate (T.unpack $ T.concat [T.concat $ fmap messageText msgs, messageText m]) chainLength
@@ -35,5 +41,5 @@ main = do
             in loop)
             (stopDiscord dis)
 
-hasValidPrefix :: T.Text -> Bool
-hasValidPrefix = T.isPrefixOf "&" . T.map toLower
+isMentioned :: Message -> Maybe User -> Bool
+isMentioned m user = (T.isPrefixOf "&" . T.map toLower) (messageText m) || (fromMaybe False $ (\u -> elem (userId u) (userId <$> messageMentions m)) <$> user)
