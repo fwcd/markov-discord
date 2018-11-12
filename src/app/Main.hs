@@ -31,7 +31,8 @@ main :: IO ()
 --            in loop)
 --           (stopDiscord dis)
 main = do
-    putStrLn $ show $ markovGenerate "This is a text that is not very long."
+    markovGenerate "This is a text that is not very long." chainLength >>= putStrLn
+    where chainLength = 10
 
 hasValidPrefix :: T.Text -> Bool
 hasValidPrefix = T.isPrefixOf "$" . T.map toLower
