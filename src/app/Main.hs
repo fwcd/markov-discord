@@ -44,11 +44,14 @@ main = do
 botPrefix :: T.Text
 botPrefix = "&"
 
+mentionAuthor :: Bool
+mentionAuthor = True
+
 filterInputMessages :: Maybe User -> [Message] -> [Message]
 filterInputMessages user = filter $ (\m -> fromMaybe True $ (/= (userId $ messageAuthor m)) <$> (userId <$> user))
 
 responsePrefix :: Message -> String -> String
-responsePrefix m = (++ ("<@" ++ (show $ userId $ messageAuthor m) ++ ">"))
+responsePrefix m = if mentionAuthor then (++ ("<@" ++ (show $ userId $ messageAuthor m) ++ ">")) else id
 
 prepareResponse :: String -> T.Text
 prepareResponse = (T.replace "&" "") . (T.pack)
