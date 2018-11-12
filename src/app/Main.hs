@@ -32,7 +32,7 @@ main = do
                                 let chainLength = 40 in case inputMsgs of
                                     Left err -> putStrLn ("Error while querying messages from channel: " <> show err)
                                     Right msgs -> do
-                                        respMsg <- prepareResponse <$> (responsePrefix m) <$> markovGenerate (concatMessages user $ filterInputMessages user $ m : msgs) chainLength
+                                        respMsg <- prepareResponse <$> (responsePrefix m user) <$> markovGenerate (concatMessages user $ filterInputMessages user $ m : msgs) chainLength
                                         resp <- restCall dis (CreateMessage (messageChannel m) respMsg Nothing)
                                         putStrLn (show resp)
                                         putStrLn ""
@@ -53,8 +53,11 @@ concatMessages user msgs = foldl (++) "" $ ((++ " ") . T.unpack . messageText) <
 filterInputMessages :: Maybe User -> [Message] -> [Message]
 filterInputMessages user = filter $ (\m -> fromMaybe True $ (/= (userId $ messageAuthor m)) <$> (userId <$> user))
 
-responsePrefix :: Message -> String -> String
-responsePrefix m = if mentionAuthor then (++ ("<@" ++ (show $ userId $ messageAuthor m) ++ ">")) else id
+responsePrefix :: Message -> Maybe User -> String -> String
+responsePrefix m user = let authorId = userId $ messageAuthor m in
+    if mentionAuthor && (fromMaybe True $ (/= authorId) <$> userId <$> user)
+        then (++ ("<@" ++ (show $ authorId) ++ ">"))
+        else id
 
 prepareResponse :: String -> T.Text
 prepareResponse = (T.replace "&" "") . (T.pack)
