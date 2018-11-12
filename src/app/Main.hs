@@ -19,14 +19,17 @@ main = do
     finally (let loop = do
                     e <- nextEvent dis
                     case e of
-                        Left er -> putStrLn ("Event error: " <> show er)
+                        Left err -> putStrLn ("Event error: " <> show err)
                         Right (MessageCreate m) -> do
                             when (hasValidPrefix (messageText m)) $ do
-                                respMsg <- let chainLength = 20 in
-                                    markovGenerate (T.unpack $ messageText m) chainLength
-                                resp <- restCall dis (CreateMessage (messageChannel m) (T.pack respMsg) Nothing)
-                                putStrLn (show resp)
-                                putStrLn ""
+                                inputMsgs <- restCall dis (GetChannelMessages (messageChannel m) (100, AroundMessage (messageId m)))
+                                let chainLength = 20 in case inputMsgs of
+                                    Left err -> putStrLn ("Error while querying messages from channel: " <> show err)
+                                    Right msgs -> do
+                                        respMsg <- markovGenerate (T.unpack $ T.concat [T.concat $ fmap messageText msgs, messageText m]) chainLength
+                                        resp <- restCall dis (CreateMessage (messageChannel m) (T.pack respMsg) Nothing)
+                                        putStrLn (show resp)
+                                        putStrLn ""
                             loop
                         _ -> do loop
             in loop)
