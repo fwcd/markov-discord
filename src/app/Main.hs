@@ -36,4 +36,4 @@ main = do
             (stopDiscord dis)
 
 hasValidPrefix :: T.Text -> Bool
-hasValidPrefix = T.isPrefixOf "$" . T.map toLower
+hasValidPrefix = T.isPrefixOf "&" . T.map toLower
