@@ -32,7 +32,7 @@ main = do
                                 let chainLength = 40 in case inputMsgs of
                                     Left err -> putStrLn ("Error while querying messages from channel: " <> show err)
                                     Right msgs -> do
-                                        respMsg <- markovGenerate (T.unpack $ T.concat [T.concat $ fmap messageText msgs, messageText m]) chainLength
+                                        respMsg <- cleanResponse <$> markovGenerate (T.unpack $ T.concat [T.concat $ fmap messageText (filterInputMessages user msgs), messageText m]) chainLength
                                         resp <- restCall dis (CreateMessage (messageChannel m) (T.pack respMsg) Nothing)
                                         putStrLn (show resp)
                                         putStrLn ""
@@ -41,5 +41,14 @@ main = do
             in loop)
             (stopDiscord dis)
 
+botPrefix :: T.Text
+botPrefix = "&"
+
+filterInputMessages :: Maybe User -> [Message] -> [Message]
+filterInputMessages user = filter $ (\m -> fromMaybe True $ (/= (userId $ messageAuthor m)) <$> (userId <$> user))
+
+cleanResponse :: String -> String
+cleanResponse = (T.unpack) . (T.replace "&" "") . (T.pack)
+
 isMentioned :: Message -> Maybe User -> Bool
-isMentioned m user = (T.isPrefixOf "&" . T.map toLower) (messageText m) || (fromMaybe False $ (\u -> elem (userId u) (userId <$> messageMentions m)) <$> user)
+isMentioned m user = (T.isPrefixOf botPrefix . T.map toLower) (messageText m) || (fromMaybe False $ (\u -> elem (userId u) (userId <$> messageMentions m)) <$> user)
