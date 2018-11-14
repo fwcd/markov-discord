@@ -39,5 +39,20 @@ markovChain table i word = if i <= 0
             ) optionalNextWord
     where defaultVal = return ""
 
+maybeLast :: [a] -> Maybe a
+maybeLast [x] = Just x
+maybeLast (_:xs) = maybeLast xs
+maybeLast [] = Nothing
+
+useInitialWordFromMessage :: Bool
+useInitialWordFromMessage = False
+
+pickInitialWord :: [String] -> Table String -> String
+pickInitialWord txtWords table = if useInitialWordFromMessage
+    then fromMaybe [] $ (maybeLast $ txtWords) >>= (\w -> (Map.lookup w $ tableMappings table) >>= maybeLast)
+    else []
+
 markovGenerate :: String -> Int -> IO String
-markovGenerate txt len = markovChain (markovStrTable txt) len []
+markovGenerate txt len = markovChain table len $ pickInitialWord txtWords table
+    where txtWords = words txt
+          table = markovTable txtWords
