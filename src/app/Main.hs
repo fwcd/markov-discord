@@ -65,7 +65,16 @@ prepareResponse = (T.replace "&" "") . (T.pack)
 respondToItself :: Bool
 respondToItself = False
 
+messageSentBy :: Message -> User -> Bool
+messageSentBy msg user = msgUserId == cmpUserId
+    where msgUserId = userId $ messageAuthor msg
+          cmpUserId = userId user
+
+messageDoesMention :: Message -> User -> Bool
+messageDoesMention msg user = elem msgUserId mentionsIds
+    where mentionsIds = userId <$> messageMentions msg
+          msgUserId = userId user
+
 shouldRespond :: Message -> Maybe User -> Bool
-shouldRespond m user = (respondToItself || (fromMaybe True $ ((/= (userId $ messageAuthor m)) . userId) <$> user)) &&
-    ((T.isPrefixOf botPrefix . T.map toLower) (messageText m)
-    || (fromMaybe False $ (\u -> elem (userId u) (userId <$> messageMentions m)) <$> user))
+shouldRespond m user = (respondToItself || (fromMaybe True $ not <$> messageSentBy m <$> user))
+    && ((fromMaybe False $ messageDoesMention m <$> user) || (T.isPrefixOf botPrefix . T.map toLower) (messageText m))
