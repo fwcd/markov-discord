@@ -27,7 +27,7 @@ main = do
                     case e of
                         Left err -> putStrLn ("Event error: " <> show err)
                         Right (MessageCreate m) -> do
-                            when (isMentioned m user) $ do
+                            when (shouldRespond m user) $ do
                                 inputMsgs <- restCall dis (GetChannelMessages (messageChannel m) (100, AroundMessage (messageId m)))
                                 let chainLength = 40 in case inputMsgs of
                                     Left err -> putStrLn ("Error while querying messages from channel: " <> show err)
@@ -62,5 +62,10 @@ responsePrefix m user = let authorId = userId $ messageAuthor m in
 prepareResponse :: String -> T.Text
 prepareResponse = (T.replace "&" "") . (T.pack)
 
-isMentioned :: Message -> Maybe User -> Bool
-isMentioned m user = (T.isPrefixOf botPrefix . T.map toLower) (messageText m) || (fromMaybe False $ (\u -> elem (userId u) (userId <$> messageMentions m)) <$> user)
+respondToItself :: Bool
+respondToItself = False
+
+shouldRespond :: Message -> Maybe User -> Bool
+shouldRespond m user = (respondToItself || (fromMaybe True $ ((/= (userId $ messageAuthor m)) . userId) <$> user)) &&
+    ((T.isPrefixOf botPrefix . T.map toLower) (messageText m)
+    || (fromMaybe False $ (\u -> elem (userId u) (userId <$> messageMentions m)) <$> user))
