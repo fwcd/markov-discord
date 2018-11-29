@@ -8,7 +8,7 @@ A bot that uses the [official Discord API](https://discordapp.com/developers/doc
 * `stack build`
 
 ## Running
-* `stack run`
+* `stack exec markovbot`
 * Invite the bot to your Discord server
 * Send a message prefixed with `&` to a channel of your choice
 * Wait for a response
