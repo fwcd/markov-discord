@@ -18,7 +18,7 @@ import MarkovMessageHandler
 respond :: DiscordContext -> IO (Maybe (ChannelRequest Message))
 respond ctx
     | "ping" `isSuffixOf` cmd = return $ Just $ stringMessageOf ctx "Pong!"
-    | "table" `isSuffixOf` cmd = Just <$> stringMessageOf ctx <$> ("The markov chain table:\n" ++) <$> (++ "...") <$> (take 600) <$> markovTableMessage ctx
+    | "table" `isSuffixOf` cmd = Just <$> stringMessageOf ctx <$> ("The markov chain table:\n" ++) <$> (++ "...") <$> (take 1800) <$> markovTableMessage ctx
     | otherwise = Just <$> textMessageOf ctx <$> prepareResponse <$> (responsePrefix m user) <$> newMarkovMessage ctx
     where cmd = (T.unpack . messageText . contextMessage) ctx
           m = contextMessage ctx
