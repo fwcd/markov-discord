@@ -13,12 +13,13 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/fwcd/MarkovBot#readme>
 
 dependencies:
-- base
-- discord-haskell
-- pipes
-- containers
-- random
-- text
+- base >= 4.10.1.0
+- discord-haskell >= 0.6.0
+- pipes >= 4.3.9
+- containers >= 0.5.10.2
+- random >= 1.1
+- text >= 1.2.3.0
+- bytestring >= 0.10.8.2
 
 library:
   source-dirs: src/lib

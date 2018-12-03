@@ -1,6 +1,6 @@
-module Markov
-    ( markovGenerate
-    ) where
+module Markov(
+    markovGenerate
+) where
 
 import System.Random (randomRIO)
 import Data.Maybe
