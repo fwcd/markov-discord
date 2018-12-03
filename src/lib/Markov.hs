@@ -1,5 +1,7 @@
 module Markov(
-    markovGenerate
+    markovStrTable,
+    markovGenerate,
+    Table (..)
 ) where
 
 import System.Random (randomRIO)
