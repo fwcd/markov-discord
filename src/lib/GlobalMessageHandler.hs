@@ -14,9 +14,20 @@ import Data.Maybe
 import Discord
 import StringUtils
 import MarkovMessageHandler
+import ImageToFile
+import Codec.Picture
+import Graphics.Rasterific
+import Graphics.Rasterific.Texture
 
 respond :: DiscordContext -> IO (Maybe (ChannelRequest Message))
 respond ctx
+    | "draw" `isSuffixOf` cmd = do
+        white <- return $ PixelRGBA8 255 255 255 255
+        blue <- return $ PixelRGBA8 0 0 255 255
+        img <- return $ renderDrawing 400 200 white $
+            withTexture (uniformTexture blue) $ do
+                fill $ circle (V2 10 10) 30
+        Just <$> fileMessageOf ctx <$> imageToFile img
     | "ping" `isSuffixOf` cmd = return $ Just $ stringMessageOf ctx "Pong!"
     | "table" `isSuffixOf` cmd = Just <$> stringMessageOf ctx <$> ("The markov chain table:\n" ++) <$> (++ "...") <$> (take 1800) <$> markovTableMessage ctx
     | otherwise = Just <$> textMessageOf ctx <$> prepareResponse <$> (responsePrefix m user) <$> newMarkovMessage ctx
