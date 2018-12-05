@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module ImageToFile(
     imageToFile
 ) where
@@ -12,17 +13,11 @@ import Control.Concurrent
 import Control.Monad
 
 imageToFile :: (PngSavable px) => Image px -> IO FilePath
-imageToFile img = withSystemTempFile "markov.png" $ \path handle -> do
-    -- TODO: The issue is that lazy IO causes the
-    -- path to be processed before the image has been
-    -- written
-    B.hPut handle $ BL.toStrict $ encodePng img
+imageToFile img = do
+    tempDir <- getCanonicalTemporaryDirectory
+    (path, handle) <- openTempFile tempDir "markov.png"
+    !result <- B.hPut handle $ BL.toStrict $ encodePng img
     hClose handle
-    waitUntilIO $ hReady handle
+    putStrLn path
+    threadDelay 1000000
     return path
-
-waitUntilIO :: IO Bool -> IO ()
-waitUntilIO cond = do
-    threadDelay 10000000 -- 10 ms
-    condResult <- cond
-    unless condResult $ waitUntilIO cond

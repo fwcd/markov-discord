@@ -35,7 +35,7 @@ respondDirectly ctx
         img <- return $ renderDrawing 400 200 white $
             withTexture (uniformTexture blue) $ do
                 fill $ circle (V2 10 10) 30
-        Just <$> fileMessageOf ctx <$> imageToFile img
+        return $ Just $ fileMessageOf ctx $ encodePng img
     | "ping" `isSuffixOf` cmd = return $ Just $ stringMessageOf ctx "Pong!"
     | "table" `isSuffixOf` cmd = Just <$> stringMessageOf ctx <$> ("The markov chain table:\n" ++) <$> (++ "...") <$> (take 1800) <$> markovTableMessage ctx
     | otherwise = Just <$> textMessageOf ctx <$> prepareResponse <$> (responsePrefix m user) <$> newMarkovMessage ctx

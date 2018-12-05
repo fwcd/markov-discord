@@ -8,7 +8,7 @@ module DiscordUtils(
 ) where
 
 import qualified Data.Text as T
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy as BL
 import Discord
 
 data DiscordContext = DiscordContext {
@@ -25,8 +25,8 @@ textMessageOf :: DiscordContext -> T.Text -> ChannelRequest Message
 textMessageOf ctx txt = CreateMessage ch txt Nothing
     where ch = (contextChannel ctx)
 
-fileMessageOf :: DiscordContext -> FilePath -> ChannelRequest Message
-fileMessageOf ctx path = UploadFile ch path $ B.empty
+fileMessageOf :: DiscordContext -> BL.ByteString -> ChannelRequest Message
+fileMessageOf ctx = UploadFile ch "markov.png"
     where ch = (contextChannel ctx)
 
 messageSentBy :: Message -> User -> Bool
