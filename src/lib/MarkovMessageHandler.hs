@@ -27,7 +27,7 @@ newMarkovMessage ctx = do
 markovTableMessage :: DiscordContext -> IO String
 markovTableMessage ctx = do
     msgs <- pullInputMessages ctx
-    return $ show $ tableMappings $ markovStrTable $ concatMessages user $ filterInputMessages user $ m : msgs
+    return $ showMarkovStrTable $ concatMessages user $ filterInputMessages user $ m : msgs
     where m = contextMessage ctx
           user = contextUser ctx
 
