@@ -6,6 +6,7 @@ module GlobalMessageHandler(
 ) where
 
 import qualified Data.Text as T
+import Control.Exception
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
 import Config
@@ -20,7 +21,14 @@ import Graphics.Rasterific
 import Graphics.Rasterific.Texture
 
 respond :: DiscordContext -> IO (Maybe (ChannelRequest Message))
-respond ctx
+respond ctx = do
+    response <- (try $ respondDirectly ctx) :: IO (Either IOError (Maybe (ChannelRequest Message)))
+    case response of
+        (Left ex) -> return $ Just $ stringMessageOf ctx $ "Oops, an IO error occurred!"
+        (Right r) -> return r
+
+respondDirectly :: DiscordContext -> IO (Maybe (ChannelRequest Message))
+respondDirectly ctx
     | "draw" `isSuffixOf` cmd = do
         white <- return $ PixelRGBA8 255 255 255 255
         blue <- return $ PixelRGBA8 0 0 255 255
