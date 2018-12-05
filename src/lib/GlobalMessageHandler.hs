@@ -15,8 +15,8 @@ import Data.Maybe
 import Discord
 import StringUtils
 import MarkovMessageHandler
-import ImageToFile
 import Codec.Picture
+import Codec.Picture.Types
 import Graphics.Rasterific
 import Graphics.Rasterific.Texture
 
@@ -35,13 +35,22 @@ respondDirectly ctx
         img <- return $ renderDrawing 400 200 white $
             withTexture (uniformTexture blue) $ do
                 fill $ circle (V2 10 10) 30
-        return $ Just $ fileMessageOf ctx $ encodePng img
-    | "ping" `isSuffixOf` cmd = return $ Just $ stringMessageOf ctx "Pong!"
-    | "table" `isSuffixOf` cmd = Just <$> stringMessageOf ctx <$> ("The markov chain table:\n" ++) <$> (++ "...") <$> (take 1800) <$> markovTableMessage ctx
-    | otherwise = Just <$> textMessageOf ctx <$> prepareResponse <$> (responsePrefix m user) <$> newMarkovMessage ctx
+        imageResponse ctx img
+    | "ping" `isSuffixOf` cmd = stringResponse ctx "Pong"
+    | "table" `isSuffixOf` cmd = (("The markov chain table:\n" ++) <$> (++ "...") <$> (take 1800) <$> markovTableMessage ctx) >>= stringResponse ctx
+    | otherwise = (prepareResponse <$> (responsePrefix m user) <$> newMarkovMessage ctx) >>= textResponse ctx
     where cmd = (T.unpack . messageText . contextMessage) ctx
           m = contextMessage ctx
           user = contextUser ctx
+
+stringResponse :: DiscordContext -> String -> IO (Maybe (ChannelRequest Message))
+stringResponse ctx = return . Just . stringMessageOf ctx
+
+textResponse :: DiscordContext -> T.Text -> IO (Maybe (ChannelRequest Message))
+textResponse ctx = return . Just . textMessageOf ctx
+
+imageResponse :: (PngSavable a) => DiscordContext -> Image a -> IO (Maybe (ChannelRequest Message))
+imageResponse ctx = return . Just . fileMessageOf ctx . encodePng
 
 shouldRespond :: Message -> Maybe User -> Bool
 shouldRespond m user = (respondToItself || (fromMaybe True $ not <$> messageSentBy m <$> user))
