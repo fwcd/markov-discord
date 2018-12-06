@@ -1,6 +1,7 @@
 module MarkovMessageHandler(
     newMarkovMessage,
-    markovTableMessage
+    markovTableMessage,
+    markovGraphMessage
 ) where
 
 import qualified Data.Text as T
@@ -8,6 +9,7 @@ import Data.Monoid ((<>))
 import Data.Maybe
 import Discord
 import DiscordUtils
+import Graph
 import Markov
 import Config
 
@@ -17,19 +19,23 @@ concatMessages user msgs = foldl (++) "" $ ((++ " ") . T.unpack . messageText) <
 filterInputMessages :: Maybe User -> [Message] -> [Message]
 filterInputMessages user = filter $ (\m -> fromMaybe True $ (/= (userId $ messageAuthor m)) <$> (userId <$> user))
 
+composeMarkovInput :: DiscordContext -> IO String
+composeMarkovInput ctx = (concatMessages user . filterInputMessages user . (m:)) <$> pullInputMessages ctx
+    where m = contextMessage ctx
+          user = contextUser ctx
+
 newMarkovMessage :: DiscordContext -> IO String
 newMarkovMessage ctx = do
-    msgs <- pullInputMessages ctx
-    markovGenerate (concatMessages user $ filterInputMessages user $ m : msgs) chainLength
+    input <- composeMarkovInput ctx
+    markovGenerate input chainLength
     where m = contextMessage ctx
           user = contextUser ctx
 
 markovTableMessage :: DiscordContext -> IO String
-markovTableMessage ctx = do
-    msgs <- pullInputMessages ctx
-    return $ showMarkovStrTable $ concatMessages user $ filterInputMessages user $ m : msgs
-    where m = contextMessage ctx
-          user = contextUser ctx
+markovTableMessage = (showMarkovStrTable <$>) . composeMarkovInput
+
+markovGraphMessage :: DiscordContext -> IO (Graph String)
+markovGraphMessage = (markovStrTableGraph <$>) . composeMarkovInput
 
 pullInputMessages :: DiscordContext -> IO [Message]
 pullInputMessages ctx = do
