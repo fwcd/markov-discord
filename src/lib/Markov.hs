@@ -15,7 +15,7 @@ data Table a = Table {
 }
 
 graphFromTable :: (Ord a) => Table a -> Graph a
-
+graphFromTable = (M.foldrWithKey (\k xs -> connectAll $ map (\x -> (k, x)) xs) emptyGraph) . tableMappings
 
 pickRandomFrom :: (Eq a) => [a] -> Maybe (IO a)
 pickRandomFrom xs
@@ -32,6 +32,7 @@ markovStrTable :: String -> Table String
 markovStrTable txt = markovTable $ words txt
 
 markovStrTableGraph :: String -> Graph String
+markovStrTableGraph = graphFromTable . markovStrTable
 
 showMarkovStrTable :: String -> String
 showMarkovStrTable txt = show $ tableMappings $ markovTable $ words txt

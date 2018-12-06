@@ -1,7 +1,12 @@
 module Graph(
     GraphEdge,
     Graph (..),
-    resolveEdge
+    resolveEdge,
+    emptyGraph,
+    withNode,
+    withEdge,
+    connect,
+    connectAll
 ) where
 
 import ContainerUtils
@@ -11,10 +16,13 @@ type GraphEdge = (Int, Int)
 data Graph a = Graph {
     graphNodes :: [a],
     graphEdges :: [GraphEdge]
-}
+} deriving (Show)
 
 resolveEdge :: GraphEdge -> Graph a -> (Maybe a, Maybe a)
 resolveEdge e g = mapTuple (\n -> nth n $ graphNodes g) e
+
+emptyGraph :: Graph a
+emptyGraph = Graph { graphNodes = [], graphEdges = [] }
 
 withNode :: (Eq a) => a -> Graph a -> Graph a
 withNode x g
@@ -35,3 +43,7 @@ withEdge x g
 connect :: (Eq a) => a -> a -> Graph a -> Graph a
 connect x y g = withNode x $ withNode y $
     withEdge (mapTuple (\v -> unwrap $ elemIndex v $ graphNodes g) (x, y)) g
+
+connectAll :: (Eq a) => [(a, a)] -> Graph a -> Graph a
+connectAll [] = id
+connectAll ((x, y):xs) = connectAll xs . connect x y
