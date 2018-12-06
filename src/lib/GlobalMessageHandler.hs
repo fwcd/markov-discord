@@ -36,9 +36,9 @@ respondDirectly ctx
             withTexture (uniformTexture blue) $ do
                 fill $ circle (V2 10 10) 30
         imageResponse ctx img
-    | "graph" `isSuffixOf` cmd = (show <$> markovGraphMessage ctx) >>= stringResponse ctx
+    | "graph" `isSuffixOf` cmd = (take 1800 <$> show <$> markovGraphMessage ctx) >>= stringResponse ctx
     | "ping" `isSuffixOf` cmd = stringResponse ctx "Pong"
-    | "table" `isSuffixOf` cmd = (("The markov chain table:\n" ++) <$> (++ "...") <$> (take 1800) <$> markovTableMessage ctx) >>= stringResponse ctx
+    | "table" `isSuffixOf` cmd = (("The markov chain table:\n" ++) <$> (++ "...") <$> take 1800 <$> markovTableMessage ctx) >>= stringResponse ctx
     | otherwise = (prepareResponse <$> (responsePrefix m user) <$> newMarkovMessage ctx) >>= textResponse ctx
     where cmd = (T.unpack . messageText . contextMessage) ctx
           m = contextMessage ctx
