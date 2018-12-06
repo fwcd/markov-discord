@@ -1,6 +1,7 @@
 module ContainerUtils(
     mapTuple,
-    nth
+    nth,
+    unwrap
 ) where
 
 -- Applies a maping function to a 2-tuple
@@ -12,3 +13,6 @@ nth :: Int -> [a] -> Maybe a
 nth n xs
     | (n >= 0) || (n < length xs) = Just $ xs !! n
     | otherwise = Nothing
+
+unwrap :: Maybe a -> a
+unwrap = maybe (error "Tried to unwrap empty Maybe") id

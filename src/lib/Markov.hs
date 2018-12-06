@@ -1,6 +1,6 @@
 module Markov(
     showMarkovStrTable,
-    -- markovStrTableGraph,
+    markovStrTableGraph,
     markovGenerate
 ) where
 
@@ -8,14 +8,14 @@ import System.Random (randomRIO)
 import Data.Maybe
 import Graph
 import qualified Data.Map.Strict as M
-import qualified Data.Graph as G
 
 data Table a = Table {
     tableKeys :: [a],
     tableMappings :: M.Map a [a]
 }
 
--- graphFromTable :: (Ord a) => Table a -> G.Graph a
+graphFromTable :: (Ord a) => Table a -> Graph a
+
 
 pickRandomFrom :: (Eq a) => [a] -> Maybe (IO a)
 pickRandomFrom xs
@@ -31,7 +31,7 @@ markovTable xs = Table {
 markovStrTable :: String -> Table String
 markovStrTable txt = markovTable $ words txt
 
--- markovStrTableGraph :: String -> G.Graph String
+markovStrTableGraph :: String -> Graph String
 
 showMarkovStrTable :: String -> String
 showMarkovStrTable txt = show $ tableMappings $ markovTable $ words txt

@@ -2,4 +2,4 @@ module GraphPlotter(
     
 ) where
 
-import Data.Graph
+import Graph
