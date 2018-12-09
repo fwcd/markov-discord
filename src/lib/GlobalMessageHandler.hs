@@ -14,8 +14,9 @@ import DiscordUtils
 import Data.Maybe
 import Discord
 import StringUtils
+import Color
 import MarkovMessageHandler
-import Codec.Picture
+import Codec.Picture (Image, PngSavable, encodePng)
 import Codec.Picture.Types
 import Graphics.Rasterific
 import Graphics.Rasterific.Texture
@@ -30,13 +31,12 @@ respond ctx = do
 respondDirectly :: DiscordContext -> IO (Maybe (ChannelRequest Message))
 respondDirectly ctx
     | "draw" `isSuffixOf` cmd = do
-        white <- return $ PixelRGBA8 255 255 255 255
-        blue <- return $ PixelRGBA8 0 0 255 255
         img <- return $ renderDrawing 400 200 white $
             withTexture (uniformTexture blue) $ do
                 fill $ circle (V2 10 10) 30
         imageResponse ctx img
-    | "graph" `isSuffixOf` cmd = (take 1800 <$> show <$> markovGraphMessage ctx) >>= stringResponse ctx
+    | "graph" `isSuffixOf` cmd = (markovGraphImgMessage ctx) >>= imageResponse ctx
+    | "graphstr" `isSuffixOf` cmd = (take 1800 <$> show <$> markovGraphStrMessage ctx) >>= stringResponse ctx
     | "ping" `isSuffixOf` cmd = stringResponse ctx "Pong"
     | "table" `isSuffixOf` cmd = (("The markov chain table:\n" ++) <$> (++ "...") <$> take 1800 <$> markovTableMessage ctx) >>= stringResponse ctx
     | otherwise = (prepareResponse <$> (responsePrefix m user) <$> newMarkovMessage ctx) >>= textResponse ctx

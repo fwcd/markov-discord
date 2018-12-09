@@ -1,7 +1,8 @@
 module MarkovMessageHandler(
     newMarkovMessage,
     markovTableMessage,
-    markovGraphMessage
+    markovGraphStrMessage,
+    markovGraphImgMessage
 ) where
 
 import qualified Data.Text as T
@@ -10,8 +11,11 @@ import Data.Maybe
 import Discord
 import DiscordUtils
 import Graph
+import GraphPlotter
 import Markov
 import Config
+import Codec.Picture (Image)
+import Codec.Picture.Types (PixelRGBA8)
 
 concatMessages :: Maybe User -> [Message] -> String
 concatMessages user msgs = foldl (++) "" $ ((++ " ") . T.unpack . messageText) <$> (filterInputMessages user msgs)
@@ -34,8 +38,11 @@ newMarkovMessage ctx = do
 markovTableMessage :: DiscordContext -> IO String
 markovTableMessage = (showMarkovStrTable <$>) . composeMarkovInput
 
-markovGraphMessage :: DiscordContext -> IO (Graph String)
-markovGraphMessage = (markovStrTableGraph <$>) . composeMarkovInput
+markovGraphStrMessage :: DiscordContext -> IO (Graph String)
+markovGraphStrMessage = (markovStrTableGraph <$>) . composeMarkovInput
+
+markovGraphImgMessage :: DiscordContext -> IO (Image PixelRGBA8)
+markovGraphImgMessage = (>>= plotStrGraph) . (markovStrTableGraph <$>) . composeMarkovInput
 
 pullInputMessages :: DiscordContext -> IO [Message]
 pullInputMessages ctx = do
