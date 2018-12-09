@@ -20,7 +20,7 @@ graphFromTable = (M.foldrWithKey (\k xs -> connectAll $ map (\x -> (k, x)) xs) e
 pickRandomFrom :: (Eq a) => [a] -> Maybe (IO a)
 pickRandomFrom xs
     | null xs = Nothing
-    | otherwise = Just $ fmap (xs !!) $ randomRIO (0, length xs - 1)
+    | otherwise = Just $ (xs !!) <$> randomRIO (0, length xs - 1)
 
 markovTable :: (Ord a) => [a] -> Table a
 markovTable xs = Table {
@@ -42,13 +42,13 @@ markovChain table i word = if i <= 0
     then defaultVal
     else fromMaybe defaultVal $ if null word
         then let optionalKey = pickRandomFrom $ tableKeys table in
-            fmap (\key -> key >>= markovChain table i) optionalKey
+            (\key -> key >>= markovChain table i) <$> optionalKey
         else let optionalNextWord = (M.lookup word $ tableMappings table) >>= pickRandomFrom in
-            fmap (\nextIOWord ->
+            (\nextIOWord ->
                 nextIOWord >>= (\nextWord ->
-                    fmap ((word ++ " ") ++) $ markovChain table (i - 1) nextWord
+                    ((word ++ " ") ++) <$> markovChain table (i - 1) nextWord
                 )
-            ) optionalNextWord
+            ) <$> optionalNextWord
     where defaultVal = return ""
 
 maybeLast :: [a] -> Maybe a
