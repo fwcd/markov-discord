@@ -25,7 +25,9 @@ respond :: DiscordContext -> IO (Maybe (ChannelRequest Message))
 respond ctx = do
     response <- (try $ respondDirectly ctx) :: IO (Either IOError (Maybe (ChannelRequest Message)))
     case response of
-        (Left ex) -> return $ Just $ stringMessageOf ctx $ "Oops, an IO error occurred!"
+        (Left ex) -> do
+            putStrLn $ show ex
+            stringResponse ctx "Oops, an IO error occurred!"
         (Right r) -> return r
 
 respondDirectly :: DiscordContext -> IO (Maybe (ChannelRequest Message))
@@ -35,6 +37,14 @@ respondDirectly ctx
             withTexture (uniformTexture blue) $ do
                 fill $ circle (V2 10 10) 30
         imageResponse ctx img
+    | "clear" `isSuffixOf` cmd = do
+        msgs <- pullOwnMessagesFromLast ctx 50
+        clearResponse <- restCall (contextClient ctx) $ BulkDeleteMessage (contextChannel ctx, messageId <$> msgs)
+        case clearResponse of
+            (Left ex) -> do
+                putStrLn $ show ex
+                stringResponse ctx "Could not clear messages."
+            (Right _) -> return $ Nothing
     | "graph" `isSuffixOf` cmd = (markovGraphImgMessage ctx) >>= imageResponse ctx
     | "graphstr" `isSuffixOf` cmd = (take 1800 <$> show <$> markovGraphStrMessage ctx) >>= stringResponse ctx
     | "ping" `isSuffixOf` cmd = stringResponse ctx "Pong"

@@ -4,11 +4,15 @@ module DiscordUtils(
     fileMessageOf,
     messageSentBy,
     messageDoesMention,
+    pullMessages,
+    pullOwnMessagesFromLast,
     DiscordContext (..)
 ) where
 
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
+import ContainerUtils
+import Data.Maybe
 import Discord
 
 data DiscordContext = DiscordContext {
@@ -38,3 +42,18 @@ messageDoesMention :: Message -> User -> Bool
 messageDoesMention msg user = elem msgUserId mentionsIds
     where mentionsIds = userId <$> messageMentions msg
           msgUserId = userId user
+
+pullMessages :: DiscordContext -> Int -> IO [Message]
+pullMessages ctx n = do
+    inputMsgs <- restCall (contextClient ctx) (GetChannelMessages (messageChannel m) (n, AroundMessage (messageId m)))
+    case inputMsgs of
+        Left err -> do
+            putStrLn ("Error while querying messages from channel: " ++ show err)
+            return []
+        Right msgs -> return msgs
+    where m = contextMessage ctx
+          user = contextUser ctx
+
+pullOwnMessagesFromLast :: DiscordContext -> Int -> IO [Message]
+pullOwnMessagesFromLast ctx = (filter (\m -> fromMaybe False $ messageSentBy m <$> user) <$>) . pullMessages ctx
+    where user = contextUser ctx

@@ -6,7 +6,6 @@ module MarkovMessageHandler(
 ) where
 
 import qualified Data.Text as T
-import Data.Monoid ((<>))
 import Data.Maybe
 import Discord
 import DiscordUtils
@@ -24,7 +23,7 @@ filterInputMessages :: Maybe User -> [Message] -> [Message]
 filterInputMessages user = filter $ (\m -> fromMaybe True $ (/= (userId $ messageAuthor m)) <$> (userId <$> user))
 
 composeMarkovInput :: DiscordContext -> IO String
-composeMarkovInput ctx = (concatMessages user . filterInputMessages user . (m:)) <$> pullInputMessages ctx
+composeMarkovInput ctx = (concatMessages user . filterInputMessages user . (m:)) <$> pullMessages ctx 100
     where m = contextMessage ctx
           user = contextUser ctx
 
@@ -43,14 +42,3 @@ markovGraphStrMessage = (markovStrTableGraph <$>) . composeMarkovInput
 
 markovGraphImgMessage :: DiscordContext -> IO (Image PixelRGBA8)
 markovGraphImgMessage = (>>= plotStrGraph) . (markovStrTableGraph <$>) . composeMarkovInput
-
-pullInputMessages :: DiscordContext -> IO [Message]
-pullInputMessages ctx = do
-    inputMsgs <- restCall (contextClient ctx) (GetChannelMessages (messageChannel m) (100, AroundMessage (messageId m)))
-    case inputMsgs of
-        Left err -> do
-            putStrLn ("Error while querying messages from channel: " <> show err)
-            return []
-        Right msgs -> return msgs
-    where m = contextMessage ctx
-          user = contextUser ctx
