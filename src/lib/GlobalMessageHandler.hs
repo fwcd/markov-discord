@@ -74,4 +74,4 @@ responsePrefix m user = let authorId = userId $ messageAuthor m in
         else id
 
 prepareResponse :: String -> T.Text
-prepareResponse = (textReplace "&" "") . (T.pack)
+prepareResponse = (textReplace botPrefix "") . (T.pack)
