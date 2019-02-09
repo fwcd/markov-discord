@@ -9,7 +9,7 @@ botPrefix :: String
 botPrefix = "&"
 
 mentionAuthor :: Bool
-mentionAuthor = True
+mentionAuthor = False
 
 respondToItself :: Bool
 respondToItself = False
