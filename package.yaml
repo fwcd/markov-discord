@@ -27,12 +27,12 @@ dependencies:
 - strict-io >= 0.2.2
 
 library:
-  source-dirs: src/lib
+  source-dirs: src
 
 executables:
   markovbot-exe:
     main:                Main.hs
-    source-dirs:         src/app
+    source-dirs:         app
     ghc-options:
     - -threaded
     - -rtsopts
@@ -43,7 +43,7 @@ executables:
 tests:
   markovbot-test:
     main:                Spec.hs
-    source-dirs:         src/test
+    source-dirs:         test
     ghc-options:
     - -threaded
     - -rtsopts
