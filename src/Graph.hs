@@ -11,6 +11,7 @@ module Graph(
 
 import ContainerUtils
 import Data.List
+import Data.Maybe
 
 type GraphEdge = (Int, Int)
 data Graph a = Graph {
@@ -41,7 +42,7 @@ withEdge x g
     | otherwise = g
 
 connect :: (Eq a) => a -> a -> Graph a -> Graph a
-connect x y g = withEdge (mapTuple (\v -> unwrap $ elemIndex v $ graphNodes withNewNodes) (x, y)) withNewNodes
+connect x y g = withEdge (mapTuple (\v -> fromJust $ elemIndex v $ graphNodes withNewNodes) (x, y)) withNewNodes
     where withNewNodes = withNode x $ withNode y g
 
 connectAll :: (Eq a) => [(a, a)] -> Graph a -> Graph a

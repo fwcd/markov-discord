@@ -1,5 +1,3 @@
--- Source: https://github.com/aquarial/discord-haskell/blob/master/examples/ping-pong.hs
-
 import Control.Exception (finally)
 import Control.Monad (when)
 import qualified Data.Cache as C
@@ -14,6 +12,7 @@ import Markov
 import Config
 import GlobalMessageHandler
 
+-- Runs the bot.
 main :: IO ()
 main = do
     token <- T.strip <$> TIO.readFile "./authtoken.secret"
@@ -24,6 +23,7 @@ main = do
     }
     TIO.putStrLn e
 
+-- Handles an incoming event.
 handleEvent :: C.Cache String User -> DiscordHandle -> Event -> IO ()
 handleEvent cache dis ev = case ev of
     Ready _ me _ _ _ -> do
