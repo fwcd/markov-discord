@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-} -- Allow string literals to be text
+
 module GlobalMessageHandler(
     shouldRespond,
     responsePrefix,
@@ -5,14 +7,17 @@ module GlobalMessageHandler(
     respond
 ) where
 
-import qualified Data.Text as T
 import Control.Exception
+import qualified Data.ByteString.Lazy as BL
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
+import qualified Data.Text as T
 import Config
 import DiscordUtils
 import Data.Maybe
 import Discord
+import Discord.Types
+import qualified Discord.Requests as R
 import StringUtils
 import Color
 import MarkovMessageHandler
@@ -21,16 +26,16 @@ import Codec.Picture.Types
 import Graphics.Rasterific
 import Graphics.Rasterific.Texture
 
-respond :: DiscordContext -> IO (Maybe (ChannelRequest Message))
+respond :: DiscordContext -> IO (Maybe (R.ChannelRequest Message))
 respond ctx = do
-    response <- (try $ respondDirectly ctx) :: IO (Either IOError (Maybe (ChannelRequest Message)))
+    response <- (try $ respondDirectly ctx) :: IO (Either IOError (Maybe (R.ChannelRequest Message)))
     case response of
-        (Left ex) -> do
+        Left ex -> do
             putStrLn $ show ex
             stringResponse ctx "Oops, an IO error occurred!"
-        (Right r) -> return r
+        Right r -> return r
 
-respondDirectly :: DiscordContext -> IO (Maybe (ChannelRequest Message))
+respondDirectly :: DiscordContext -> IO (Maybe (R.ChannelRequest Message))
 respondDirectly ctx
     | "draw" `isSuffixOf` cmd = do
         img <- return $ renderDrawing 400 200 white $
@@ -38,30 +43,34 @@ respondDirectly ctx
                 fill $ circle (V2 10 10) 30
         imageResponse ctx img
     | "clear" `isSuffixOf` cmd = do
-        msgs <- pullOwnMessagesFromLast ctx 50
-        clearResponse <- restCall (contextClient ctx) $ BulkDeleteMessage (contextChannel ctx, messageId <$> msgs)
+        msgs <- pullOwnMessagesFromLast dis m me 50
+        clearResponse <- restCall (contextHandle ctx) $ R.BulkDeleteMessage (contextChannel ctx, messageId <$> msgs)
         case clearResponse of
-            (Left ex) -> do
+            Left ex -> do
                 putStrLn $ show ex
                 stringResponse ctx "Could not clear messages."
-            (Right _) -> return $ Nothing
+            Right _ -> return $ Nothing
     | "graph" `isSuffixOf` cmd = (markovGraphImgMessage ctx) >>= imageResponse ctx
     | "graphstr" `isSuffixOf` cmd = (take 1800 <$> show <$> markovGraphStrMessage ctx) >>= stringResponse ctx
     | "ping" `isSuffixOf` cmd = stringResponse ctx "Pong"
     | "table" `isSuffixOf` cmd = (("The markov chain table:\n" ++) <$> (++ "...") <$> take 1800 <$> markovTableMessage ctx) >>= stringResponse ctx
-    | otherwise = (prepareResponse <$> (responsePrefix m user) <$> newMarkovMessage ctx) >>= textResponse ctx
+    | otherwise = (prepareResponse <$> (responsePrefix m me) <$> newMarkovMessage ctx) >>= textResponse ctx
     where cmd = (T.unpack . messageText . contextMessage) ctx
+          dis = contextHandle ctx
           m = contextMessage ctx
-          user = contextUser ctx
+          me = contextUser ctx
 
-stringResponse :: DiscordContext -> String -> IO (Maybe (ChannelRequest Message))
-stringResponse ctx = return . Just . stringMessageOf ctx
+stringResponse :: DiscordContext -> String -> IO (Maybe (R.ChannelRequest Message))
+stringResponse ctx = return . Just . R.CreateMessage ch . T.pack
+    where ch = contextChannel ctx
 
-textResponse :: DiscordContext -> T.Text -> IO (Maybe (ChannelRequest Message))
-textResponse ctx = return . Just . textMessageOf ctx
+textResponse :: DiscordContext -> T.Text -> IO (Maybe (R.ChannelRequest Message))
+textResponse ctx = return . Just . R.CreateMessage ch
+    where ch = contextChannel ctx
 
-imageResponse :: (PngSavable a) => DiscordContext -> Image a -> IO (Maybe (ChannelRequest Message))
-imageResponse ctx = return . Just . fileMessageOf ctx . encodePng
+imageResponse :: (PngSavable a) => DiscordContext -> Image a -> IO (Maybe (R.ChannelRequest Message))
+imageResponse ctx = return . Just . R.CreateMessageUploadFile ch "markov.png" . BL.toStrict . encodePng
+    where ch = contextChannel ctx
 
 shouldRespond :: Message -> Maybe User -> Bool
 shouldRespond m user = (respondToItself || (fromMaybe True $ not <$> messageSentBy m <$> user))

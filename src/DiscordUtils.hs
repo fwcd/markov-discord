@@ -1,37 +1,24 @@
 module DiscordUtils(
-    stringMessageOf,
-    textMessageOf,
-    fileMessageOf,
     messageSentBy,
     messageDoesMention,
     pullMessages,
     pullOwnMessagesFromLast,
-    DiscordContext (..)
+    DiscordContext(..)
 ) where
 
-import qualified Data.Text as T
-import qualified Data.ByteString.Lazy as BL
 import ContainerUtils
 import Data.Maybe
+import qualified Data.Text as T
 import Discord
+import Discord.Types
+import qualified Discord.Requests as R
 
 data DiscordContext = DiscordContext {
-    contextClient :: (RestChan, Gateway, [ThreadIdType]),
+    contextHandle :: DiscordHandle,
     contextUser :: Maybe User,
     contextMessage :: Message,
     contextChannel :: Snowflake
 }
-
-stringMessageOf :: DiscordContext -> String -> ChannelRequest Message
-stringMessageOf ctx = textMessageOf ctx . T.pack
-
-textMessageOf :: DiscordContext -> T.Text -> ChannelRequest Message
-textMessageOf ctx txt = CreateMessage ch txt Nothing
-    where ch = (contextChannel ctx)
-
-fileMessageOf :: DiscordContext -> BL.ByteString -> ChannelRequest Message
-fileMessageOf ctx = UploadFile ch "markov.png"
-    where ch = (contextChannel ctx)
 
 messageSentBy :: Message -> User -> Bool
 messageSentBy msg user = msgUserId == cmpUserId
@@ -43,17 +30,15 @@ messageDoesMention msg user = elem msgUserId mentionsIds
     where mentionsIds = userId <$> messageMentions msg
           msgUserId = userId user
 
-pullMessages :: DiscordContext -> Int -> IO [Message]
-pullMessages ctx n = do
-    inputMsgs <- restCall (contextClient ctx) (GetChannelMessages (messageChannel m) (n, AroundMessage (messageId m)))
+pullMessages :: DiscordHandle -> Message -> Int -> IO [Message]
+pullMessages dis m n = do
+    inputMsgs <- restCall dis (R.GetChannelMessages ch (n, R.AroundMessage (messageId m)))
     case inputMsgs of
-        Left err -> do
-            putStrLn ("Error while querying messages from channel: " ++ show err)
+        Left e -> do
+            putStrLn $ "Error while querying messages from channel: " <> show e
             return []
         Right msgs -> return msgs
-    where m = contextMessage ctx
-          user = contextUser ctx
+    where ch = messageChannel m
 
-pullOwnMessagesFromLast :: DiscordContext -> Int -> IO [Message]
-pullOwnMessagesFromLast ctx = (filter (\m -> fromMaybe False $ messageSentBy m <$> user) <$>) . pullMessages ctx
-    where user = contextUser ctx
+pullOwnMessagesFromLast :: DiscordHandle -> Message -> Maybe User -> Int -> IO [Message]
+pullOwnMessagesFromLast dis m me = (filter (\m -> fromMaybe False $ messageSentBy m <$> me) <$>) . pullMessages dis m

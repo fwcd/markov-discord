@@ -8,6 +8,7 @@ module MarkovMessageHandler(
 import qualified Data.Text as T
 import Data.Maybe
 import Discord
+import Discord.Types
 import DiscordUtils
 import Graph
 import GraphPlotter
@@ -17,22 +18,22 @@ import Codec.Picture (Image)
 import Codec.Picture.Types (PixelRGBA8)
 
 concatMessages :: Maybe User -> [Message] -> String
-concatMessages user msgs = foldl (++) "" $ ((++ " ") . T.unpack . messageText) <$> (filterInputMessages user msgs)
+concatMessages me msgs = foldl (++) "" $ ((++ " ") . T.unpack . messageText) <$> (filterInputMessages me msgs)
 
 filterInputMessages :: Maybe User -> [Message] -> [Message]
-filterInputMessages user = filter $ (\m -> fromMaybe True $ (/= (userId $ messageAuthor m)) <$> (userId <$> user))
+filterInputMessages me = filter $ (\m -> fromMaybe True $ (/= (userId $ messageAuthor m)) <$> (userId <$> me))
 
 composeMarkovInput :: DiscordContext -> IO String
-composeMarkovInput ctx = (concatMessages user . filterInputMessages user . (m:)) <$> pullMessages ctx 100
+composeMarkovInput ctx = (concatMessages me . filterInputMessages me . (m:)) <$> pullMessages dis m 100
     where m = contextMessage ctx
-          user = contextUser ctx
+          me = contextUser ctx
+          dis = contextHandle ctx
 
 newMarkovMessage :: DiscordContext -> IO String
 newMarkovMessage ctx = do
     input <- composeMarkovInput ctx
     markovGenerate input chainLength
     where m = contextMessage ctx
-          user = contextUser ctx
 
 markovTableMessage :: DiscordContext -> IO String
 markovTableMessage = (showMarkovStrTable <$>) . composeMarkovInput

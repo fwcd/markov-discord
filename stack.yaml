@@ -6,5 +6,4 @@ packages:
 extra-deps:
 - discord-haskell-1.1.2
 - emoji-0.1.0.2
-- strict-io-0.2.2
 - JuicyPixels-3.3.3.1
